@@ -1,0 +1,9 @@
+year,region,crop,rainfall_mm,temp_avg_c,ndvi_avg,soil_type,yield_ton_ha
+2020,Thiès,Arachide,620,27.5,0.62,Sableux,1.85
+2021,Fatick,Mil,580,28.1,0.58,Argileux,0.95
+2022,Kaolack,Maïs,710,26.8,0.71,Sableux,2.15
+2020,Saint-Louis,Riz,850,25.9,0.78,Argileux,3.20
+2023,Kaffrine,Arachide,590,28.0,0.60,Sableux,1.60
+2021,Tambacounda,Sorgho,650,27.2,0.65,Sableux,1.40
+2022,Sédhiou,Riz,920,26.5,0.82,Argileux,3.80
+# Ajoute environ 150-200 lignes similaires pour plus de réalisme (tu peux les générer avec un petit script si besoin)
