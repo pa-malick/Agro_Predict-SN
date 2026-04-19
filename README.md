@@ -8,7 +8,8 @@
 [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 
 > **Projet Master 2 - Data Science & Génie Logiciel**  
-> Auteur : **Papa Malick NDIAYE** - njaymika@gmail.com
+> Auteur : **Papa Malick NDIAYE** - njaymika@gmail.com  
+> Université : **Alioune Diop de Bambey**
 
 ---
 
@@ -37,7 +38,7 @@ L'agriculture représente **~15 % du PIB sénégalais** et fait vivre plus de 60
 
 | Source | Données | Accès |
 |---|---|---|
-| [FAOSTAT](https://www.fao.org/faostat) | Rendements nationaux Sénégal 2000–2022 par culture | Bulk download officiel |
+| [FAOSTAT](https://www.fao.org/faostat) | Rendements nationaux Sénégal 2000-2022 par culture | Bulk download officiel |
 | [NASA POWER API](https://power.larc.nasa.gov) | Météo réelle par région : pluie, temp, humidité, vent, ensoleillement | REST API gratuite |
 | [DAPSA / ANSD](https://agriculture.gouv.sn) | Facteurs de régionalisation par région agricole | Publications officielles |
 
@@ -45,12 +46,12 @@ L'agriculture représente **~15 % du PIB sénégalais** et fait vivre plus de 60
 
 ## Fonctionnalités
 
-- **Prédiction** des rendements pour 5 cultures × 7 régions avec intervalle de confiance 95 %
+- **Prédiction** des rendements pour 5 cultures x 7 régions avec intervalle de confiance 95 %
 - **26 variables** : climatiques (NASA POWER réelles), pédologiques, agronomiques, géographiques
 - **Carte interactive** avec rendements prévus colorés par intensité
-- **Recommandations dynamiques** : variété, calendrier de semis, irrigation, alertes ravageurs
-- **Explainabilité** : importance des variables + courbes de sensibilité par paramètre
-- **Historique** : tendances 2000–2023, heatmap région × culture, comparaison saison N vs N-1
+- **Recommandations agronomiques** : variété, calendrier de semis, irrigation, alertes ravageurs
+- **Explicabilité** : importance des variables + courbes de sensibilité par paramètre
+- **Historique** : tendances 2000-2023, heatmap région x culture, comparaison saison N vs N-1
 - **Export CSV** de l'historique des prédictions
 - **Globe 3D** animé avec localisation des régions agricoles
 
@@ -69,24 +70,23 @@ AgroPredict_SN/
 │   ├── 5_Analyse_SHAP.py
 │   └── 6_Historique.py
 ├── models/
-│   ├── train_model.py            # Entraînement XGBoost
-│   └── predict.py                # Inférence + intervalle de confiance
+│   ├── train_model.py            # Entrainement XGBoost
+│   └── predict.py                # Inference + intervalle de confiance
 ├── data/
 │   ├── raw/
 │   │   ├── senegal_yield_data.csv     # Dataset final (6 440 lignes)
-│   │   ├── faostat_raw.csv            # Données FAOSTAT brutes
-│   │   └── nasa_power_monthly.json    # Données NASA POWER brutes
+│   │   └── faostat_raw.csv            # Donnees FAOSTAT brutes
 │   └── pipelines/
 │       ├── fetch_nasa_power.py        # Fetch API NASA POWER
 │       └── build_final_dataset.py     # Pipeline de construction
 ├── utils/
-│   ├── theme.py                  # UI corporate dark + globe 3D
+│   ├── theme.py                  # UI dark + globe 3D
 │   ├── preprocessing.py          # Encodage + features
 │   ├── data_loader.py
 │   └── visualization.py
 ├── tests/
-│   ├── test_model.py             # 10 tests modèle
-│   └── test_data.py              # 7 tests données
+│   ├── test_model.py             # Tests modele
+│   └── test_data.py              # Tests donnees
 ├── .github/workflows/
 │   ├── ci.yml                    # Lint + tests + build Docker
 │   └── deploy.yml                # Deploy automatique
@@ -105,7 +105,7 @@ git clone https://github.com/Pa-Malick/AgroPredict_SN.git
 cd AgroPredict_SN
 pip install -r requirements.txt
 
-# Générer le dataset et entraîner le modèle
+# Generer le dataset et entrainer le modele
 python data/pipelines/build_final_dataset.py
 python -m models.train_model
 
@@ -125,16 +125,16 @@ docker-compose up --build
 ## Pipeline de données
 
 ```bash
-# 1. Récupérer les données NASA POWER réelles (API gratuite)
+# 1. Recuperer les donnees NASA POWER reelles (API gratuite)
 python data/pipelines/fetch_nasa_power.py
 
 # 2. Construire le dataset final (FAOSTAT + NASA POWER)
 python data/pipelines/build_final_dataset.py
 
-# 3. Entraîner le modèle
+# 3. Entrainer le modele
 python -m models.train_model
 
-# 4. Lancer les tests (17 tests)
+# 4. Lancer les tests
 pytest tests/ -v
 ```
 
@@ -144,10 +144,10 @@ pytest tests/ -v
 
 | Composant | Détail |
 |---|---|
-| CI - GitHub Actions | Lint (flake8) + pytest + build Docker à chaque push |
-| CD - GitHub Actions | Entraînement auto + déploiement Streamlit Cloud sur push `master` |
+| CI - GitHub Actions | Lint (flake8) + pytest + build Docker a chaque push |
+| CD - GitHub Actions | Entrainement auto + deploiement Streamlit Cloud sur push `master` |
 | Containerisation | Dockerfile multi-stage + healthcheck |
-| Tests | 17 tests (données + modèle) - couverture critique |
+| Tests | 17 tests (donnees + modele) |
 
 ---
 
@@ -171,4 +171,5 @@ pytest tests/ -v
 
 **Papa Malick NDIAYE**  
 Master 2 Data Science & Génie Logiciel  
+Université Alioune Diop de Bambey  
 njaymika@gmail.com
