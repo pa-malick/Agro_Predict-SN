@@ -1,9 +1,21 @@
+import os
 import streamlit as st
 from utils.data_loader import load_data
 from utils.visualization import plot_yield_distribution, create_senegal_map
 from utils.theme import inject_theme, render_hero, kpi_row
 from models.predict import predict_yield, predict_interval, get_model_metrics
 from streamlit_folium import st_folium
+
+
+@st.cache_resource(show_spinner="Entraînement du modèle au démarrage…")
+def _auto_train():
+    """Entraine le modele au premier demarrage si le fichier .pkl est absent."""
+    if not os.path.exists("models/yield_model.pkl"):
+        from models.train_model import train_yield_model
+        train_yield_model()
+
+
+_auto_train()
 
 st.set_page_config(
     page_title="AgroPredict SN",
