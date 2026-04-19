@@ -46,7 +46,7 @@ with st.sidebar:
     temp     = st.slider("Température moyenne (°C)", 24.0, 33.0, 27.5, step=0.1)
     ndvi     = st.slider("Indice NDVI", 0.30, 0.92, 0.65, step=0.01)
 
-    predict_btn = st.button("Lancer la prédiction", type="primary", use_container_width=True)
+    predict_btn = st.button("Lancer la prédiction", type="primary", width='stretch')
 
     st.markdown("<hr style='border-color:rgba(0,200,100,0.1);margin:1.2rem 0 0.5rem;'/>", unsafe_allow_html=True)
     st.markdown("<div style='font-size:0.7rem;color:#3A5A7A;text-align:center;'>Papa Malick NDIAYE · M2 Data Science</div>", unsafe_allow_html=True)
@@ -112,11 +112,11 @@ with tab1:
                 xaxis=dict(gridcolor="rgba(0,200,100,0.06)", color="#7A9BB5"),
                 yaxis=dict(gridcolor="rgba(0,200,100,0.06)", color="#7A9BB5"),
             )
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width='stretch')
         with col_b:
             st.dataframe(
                 df.head(15),
-                use_container_width=True,
+                width='stretch',
                 hide_index=True,
             )
     except Exception as e:
@@ -143,7 +143,7 @@ with tab2:
 
     st.markdown("<br/>", unsafe_allow_html=True)
     m = create_senegal_map(preds)
-    st_folium(m, width=None, height=480, use_container_width=True)
+    st_folium(m, use_container_width=True, height=480)
 
 with tab3:
     st.markdown("""

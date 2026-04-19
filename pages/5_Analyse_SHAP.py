@@ -57,7 +57,7 @@ with tab1:
         yaxis=dict(color="#C8D8E8", tickfont={"size": 11}),
         font_color="#C8D8E8",
     )
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width='stretch')
 
     # Metriques de performance du modele
     c1, c2, c3, c4 = st.columns(4)
@@ -134,7 +134,7 @@ with tab2:
             yaxis=dict(title="Rendement prevu (t/ha)", gridcolor="rgba(0,200,100,0.06)", color="#7A9BB5", tickfont={"color":"#7A9BB5"}),
             font_color="#C8D8E8",
         )
-        st.plotly_chart(fig2, use_container_width=True)
+        st.plotly_chart(fig2, width='stretch')
 
         # Min / Max
         y_arr = np.array(ys)

@@ -63,7 +63,7 @@ with tab1:
             xaxis=dict(title="Annee", gridcolor="rgba(0,200,100,0.06)", color="#7A9BB5", tickfont={"color":"#7A9BB5"}),
             yaxis=dict(title="Rendement moyen (t/ha)", gridcolor="rgba(0,200,100,0.06)", color="#7A9BB5", tickfont={"color":"#7A9BB5"}),
         )
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width='stretch')
 
     # Heatmap : tableau croise region x culture
     st.markdown("<div class='section-title fade-in' style='font-size:1.1rem;margin-top:1rem;'>Rendement moyen par region et culture</div>", unsafe_allow_html=True)
@@ -77,7 +77,7 @@ with tab1:
         height=280, margin=dict(t=10, b=10, l=10, r=10),
         font_color="#C8D8E8", coloraxis_colorbar=dict(tickfont={"color": "#7A9BB5"}),
     )
-    st.plotly_chart(fig_hm, use_container_width=True)
+    st.plotly_chart(fig_hm, width='stretch')
 
 with tab2:
     st.markdown("<div class='section-title fade-in'>Comparaison saison N vs N-1</div>", unsafe_allow_html=True)
@@ -109,7 +109,7 @@ with tab2:
         xaxis=dict(gridcolor="rgba(0,200,100,0.06)", color="#7A9BB5", tickfont={"color":"#C8D8E8"}),
         yaxis=dict(title="Rendement (t/ha)", gridcolor="rgba(0,200,100,0.06)", color="#7A9BB5", tickfont={"color":"#7A9BB5"}),
     )
-    st.plotly_chart(fig_cmp, use_container_width=True)
+    st.plotly_chart(fig_cmp, width='stretch')
 
     # Delta cards
     cols = st.columns(min(len(df_cmp), 7))
@@ -152,7 +152,7 @@ with tab3:
 
     if st.session_state.prediction_history:
         df_hist = pd.DataFrame(st.session_state.prediction_history)
-        st.dataframe(df_hist, use_container_width=True, hide_index=True)
+        st.dataframe(df_hist, width='stretch', hide_index=True)
 
         # Export CSV
         csv = df_hist.to_csv(index=False).encode("utf-8")

@@ -34,7 +34,7 @@ with col_form:
         pest       = st.slider("Pression ravageurs (0-1)", 0.0, 1.0, 0.10, step=0.05)
 
     st.markdown("</div>", unsafe_allow_html=True)
-    predict_btn = st.button("Prédire le rendement", type="primary", use_container_width=True)
+    predict_btn = st.button("Prédire le rendement", type="primary", width='stretch')
 
 with col_result:
     if predict_btn:
@@ -85,7 +85,7 @@ with col_result:
                 paper_bgcolor="rgba(0,0,0,0)", height=220,
                 margin=dict(t=20, b=0, l=20, r=20), font_color="#C8D8E8",
             )
-            st.plotly_chart(fig_gauge, use_container_width=True)
+            st.plotly_chart(fig_gauge, width='stretch')
 
         with c2:
             all_preds = {r: predict_yield(r, crop, rainfall, temp, ndvi, soil,
@@ -108,7 +108,7 @@ with col_result:
                 yaxis=dict(gridcolor="rgba(0,200,100,0.05)", color="#C8D8E8"),
                 font_color="#C8D8E8",
             )
-            st.plotly_chart(fig_bar, use_container_width=True)
+            st.plotly_chart(fig_bar, width='stretch')
 
         if metrics:
             st.markdown(f"""

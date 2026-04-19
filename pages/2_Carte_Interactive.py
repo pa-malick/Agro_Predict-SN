@@ -104,4 +104,4 @@ with col_map:
             ),
         ).add_to(m)
 
-    st_folium(m, width=None, height=540, use_container_width=True)
+    st_folium(m, use_container_width=True, height=540)
