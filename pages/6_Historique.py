@@ -152,7 +152,7 @@ with tab3:
 
     if st.session_state.prediction_history:
         df_hist = pd.DataFrame(st.session_state.prediction_history)
-        st.dataframe(df_hist, width='stretch', hide_index=True)
+        st.dataframe(df_hist, use_container_width=True, hide_index=True)
 
         # Export CSV
         csv = df_hist.to_csv(index=False).encode("utf-8")

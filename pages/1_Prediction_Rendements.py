@@ -34,7 +34,7 @@ with col_form:
         pest       = st.slider("Pression ravageurs (0-1)", 0.0, 1.0, 0.10, step=0.05)
 
     st.markdown("</div>", unsafe_allow_html=True)
-    predict_btn = st.button("Prédire le rendement", type="primary", width='stretch')
+    predict_btn = st.button("Prédire le rendement", type="primary", use_container_width=True)
 
 with col_result:
     if predict_btn:

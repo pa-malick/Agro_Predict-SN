@@ -40,7 +40,7 @@ with col_form:
     ndvi     = st.slider("NDVI végétation", 0.30, 0.92, 0.65, step=0.01)
 
     st.markdown("</div>", unsafe_allow_html=True)
-    go_btn = st.button("Générer les recommandations", type="primary", width='stretch')
+    go_btn = st.button("Générer les recommandations", type="primary", use_container_width=True)
 
 with col_reco:
     if go_btn:

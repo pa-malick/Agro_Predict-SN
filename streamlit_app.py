@@ -46,7 +46,7 @@ with st.sidebar:
     temp     = st.slider("Température moyenne (°C)", 24.0, 33.0, 27.5, step=0.1)
     ndvi     = st.slider("Indice NDVI", 0.30, 0.92, 0.65, step=0.01)
 
-    predict_btn = st.button("Lancer la prédiction", type="primary", width='stretch')
+    predict_btn = st.button("Lancer la prédiction", type="primary", use_container_width=True)
 
     st.markdown("<hr style='border-color:rgba(0,200,100,0.1);margin:1.2rem 0 0.5rem;'/>", unsafe_allow_html=True)
     st.markdown("<div style='font-size:0.7rem;color:#3A5A7A;text-align:center;'>Papa Malick NDIAYE · M2 Data Science</div>", unsafe_allow_html=True)
@@ -116,7 +116,7 @@ with tab1:
         with col_b:
             st.dataframe(
                 df.head(15),
-                width='stretch',
+                use_container_width=True,
                 hide_index=True,
             )
     except Exception as e:
