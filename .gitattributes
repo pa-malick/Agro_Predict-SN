@@ -1,0 +1,21 @@
+# Normalisation des fins de ligne : LF dans le depot, conversion auto selon l'OS
+* text=auto
+
+# Forcer LF pour les fichiers texte Python et web
+*.py text eol=lf
+*.md text eol=lf
+*.txt text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.json text eol=lf
+*.css text eol=lf
+*.html text eol=lf
+
+# Fichiers binaires : pas de conversion
+*.pkl binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.docx binary
