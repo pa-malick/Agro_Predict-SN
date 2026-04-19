@@ -1,8 +1,6 @@
 import streamlit as st
-import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
-import plotly.express as px
 from models.predict import load_model, get_feature_importances
 from utils.theme import inject_theme, page_header
 
@@ -33,9 +31,12 @@ with tab1:
         st.stop()
 
     # Nettoyage des noms de variables pour l'affichage
-    names  = [f[0].replace("crop_", "Culture: ").replace("region_", "Region: ")
-               .replace("irrigation_type_", "Irrigation: ").replace("variety_", "Variete: ")
-               .replace("soil_type_", "Sol: ") for f in top_feats]
+    names = [
+        f[0].replace("crop_", "Culture: ").replace("region_", "Region: ")
+        .replace("irrigation_type_", "Irrigation: ").replace("variety_", "Variete: ")
+        .replace("soil_type_", "Sol: ")
+        for f in top_feats
+    ]
     values = [f[1] for f in top_feats]
     max_v  = max(values)
     # Couleur proportionnelle a l'importance

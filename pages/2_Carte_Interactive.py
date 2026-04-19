@@ -1,6 +1,5 @@
 import streamlit as st
 import folium
-from folium.plugins import MarkerCluster
 from streamlit_folium import st_folium
 from models.predict import predict_yield
 from utils.theme import inject_theme, page_header

@@ -1,5 +1,4 @@
 import streamlit as st
-import pandas as pd
 from utils.data_loader import load_data
 from utils.visualization import plot_yield_distribution, create_senegal_map
 from utils.theme import inject_theme, render_hero, kpi_row

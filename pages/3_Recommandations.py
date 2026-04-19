@@ -53,9 +53,12 @@ with col_reco:
 
         # Score de risque
         risk = 0
-        if pred < 0.8: risk = 3
-        elif pred < 1.3: risk = 2
-        elif pred < 2.0: risk = 1
+        if pred < 0.8:
+            risk = 3
+        elif pred < 1.3:
+            risk = 2
+        elif pred < 2.0:
+            risk = 1
         risk_label = ["Faible", "Modéré", "Élevé", "Critique"][risk]
         risk_color = ["#00C851", "#FFD060", "#FFA000", "#FF3C3C"][risk]
 

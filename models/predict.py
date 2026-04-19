@@ -1,8 +1,6 @@
 import pickle
-import pandas as pd
-import numpy as np
 import os
-from utils.preprocessing import preprocess_single, NUMERIC_COLS, CAT_COLS
+from utils.preprocessing import preprocess_single
 
 # Cache en memoire pour eviter de recharger le fichier .pkl a chaque prediction
 _cache = {}

@@ -53,7 +53,7 @@ with tab1:
                 line=dict(color=COLORS.get(crop, "#FFF"), width=2.5),
                 marker=dict(size=6),
                 fill="tozeroy" if len(crops_sel) == 1 else None,
-                fillcolor=f"rgba(0,200,100,0.05)" if len(crops_sel) == 1 else None,
+                fillcolor="rgba(0,200,100,0.05)" if len(crops_sel) == 1 else None,
             ))
 
         fig.update_layout(
