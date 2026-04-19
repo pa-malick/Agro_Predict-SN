@@ -1,0 +1,28 @@
+# Environnements Python
+__pycache__/
+*.py[cod]
+*.pyo
+.env
+.venv/
+venv/
+
+# Fichiers generés (recrées automatiquement par le pipeline)
+models/yield_model.pkl
+
+# Données brutes volumineuses (generées localement)
+data/raw/nasa_power_monthly.json
+
+# Documents de soutenance (ne pas publier)
+RAPPORT_SOUTENANCE.md
+RAPPORT_SOUTENANCE_AgroPredict_SN.docx
+generate_rapport.py
+
+# Éditeurs et OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# Claude Code
+.claude/

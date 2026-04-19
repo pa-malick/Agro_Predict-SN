@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches: [master, main, develop]
+  pull_request:
+    branches: [master, main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt pytest flake8
+
+      - name: Lint (flake8)
+        run: flake8 models/ utils/ pages/ --max-line-length=120 --ignore=E501,W503
+
+      - name: Generate dataset
+        run: python data/pipelines/generate_dataset.py
+
+      - name: Train model
+        run: python -m models.train_model
+
+      - name: Run tests
+        run: pytest tests/ -v --tb=short
+
+  docker-build:
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t agropredic-sn:${{ github.sha }} .
+
+      - name: Smoke test container
+        run: |
+          docker run --rm -d -p 8501:8501 --name test_app agropredic-sn:${{ github.sha }}
+          sleep 10
+          curl -f http://localhost:8501/_stcore/health || (docker logs test_app && exit 1)
+          docker stop test_app

@@ -8,3 +8,5 @@ folium==0.16.0
 shap==0.45.0
 streamlit-folium==0.16.0
 openpyxl
+requests
+pytest
