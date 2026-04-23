@@ -13,9 +13,7 @@ models/yield_model.pkl
 data/raw/nasa_power_monthly.json
 
 # Documents de soutenance (ne pas publier)
-RAPPORT_SOUTENANCE.md
-RAPPORT_SOUTENANCE_AgroPredict_SN.docx
-generate_rapport.py
+RAPPORT_AgroPredict_SN.docx
 
 # Éditeurs et OS
 .DS_Store
