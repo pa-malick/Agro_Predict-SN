@@ -2,51 +2,73 @@ name: CI
 
 on:
   push:
-    branches: [master, main, develop]
+    branches: [master, main, "v2-*"]
   pull_request:
     branches: [master, main]
 
 jobs:
-  test:
+  qualite:
+    name: Tests et critères d'acceptation
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
           cache: "pip"
 
-      - name: Install dependencies
+      - name: Installer les dépendances
         run: pip install -r requirements.txt pytest flake8
 
-      - name: Lint (flake8)
-        run: flake8 models/ utils/ pages/ --max-line-length=120 --ignore=E501,W503
+      - name: Style
+        run: flake8 models/ utils/ pages/ tests/ data/ --max-line-length=120 --ignore=E501,W503,E221,E241
 
-      - name: Generate dataset
-        run: python data/pipelines/generate_dataset.py
+      - name: Construire le jeu de données
+        run: python data/pipelines/build_final_dataset.py
 
-      - name: Train model
+      - name: Entraîner le modèle
+        env:
+          AGROPREDICT_COMMIT: ${{ github.sha }}
         run: python -m models.train_model
 
-      - name: Run tests
+      - name: Critères d'acceptation CA-1 à CA-6
         run: pytest tests/ -v --tb=short
 
-  docker-build:
+      - name: Publier le modèle comme artefact
+        uses: actions/upload-artifact@v4
+        with:
+          name: modele-${{ github.sha }}
+          path: |
+            models/yield_model.pkl
+            data/raw/senegal_yield_data.sha256
+          retention-days: 30
+
+  conteneur:
+    name: Image Docker
     runs-on: ubuntu-latest
-    needs: test
+    needs: qualite
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build Docker image
-        run: docker build -t agropredic-sn:${{ github.sha }} .
+      - name: Construire l'image
+        run: docker build --build-arg GIT_COMMIT=${{ github.sha }} -t agropredict-sn:${{ github.sha }} .
 
-      - name: Smoke test container
+      - name: Vérifier que le conteneur devient sain
         run: |
-          docker run --rm -d -p 8501:8501 --name test_app agropredic-sn:${{ github.sha }}
-          sleep 10
-          curl -f http://localhost:8501/_stcore/health || (docker logs test_app && exit 1)
-          docker stop test_app
+          docker run -d --name verif -p 8501:8501 agropredict-sn:${{ github.sha }}
+          for i in $(seq 1 30); do
+            etat=$(docker inspect --format='{{.State.Health.Status}}' verif)
+            echo "tentative $i : $etat"
+            if [ "$etat" = "healthy" ]; then exit 0; fi
+            if [ "$etat" = "unhealthy" ]; then docker logs verif; exit 1; fi
+            sleep 5
+          done
+          docker logs verif
+          exit 1
+
+      - name: Arrêter le conteneur
+        if: always()
+        run: docker rm -f verif || true

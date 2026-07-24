@@ -1,106 +1,139 @@
-import pickle
-import os
-from utils.preprocessing import preprocess_single
+"""Simulation de rendement a partir des informations que l'agriculteur connait.
 
-# Cache en memoire pour eviter de recharger le fichier .pkl a chaque prediction
+L'utilisateur ne renseigne que cinq choses : sa region, sa culture, sa surface,
+son engrais et son mode d'irrigation. Toutes les autres variables du modele
+(meteo, sol, cycle, pression ravageurs) sont completees avec les valeurs
+typiques de sa region, calculees lors de l'entrainement.
+"""
+
+import os
+import pickle
+
+from utils.preprocessing import preprocess_single
+from utils.referentiel import COORDONNEES, VARIETES_DEFAUT, valider
+
+CHEMIN_MODELE = "models/yield_model.pkl"
+
+# Un sac standard de recolte pese 50 kg, soit 20 sacs par tonne.
+SACS_PAR_TONNE = 20
+
 _cache = {}
 
 
 def load_model():
-    """Charge le modele depuis le fichier .pkl (avec cache en memoire)."""
+    """Charge le modele entraine, ou None si l'artefact est absent."""
     if "bundle" in _cache:
         return _cache["bundle"]
-    path = "models/yield_model.pkl"
-    if not os.path.exists(path):
+    if not os.path.exists(CHEMIN_MODELE):
         return None
-    with open(path, "rb") as f:
+    with open(CHEMIN_MODELE, "rb") as f:
         bundle = pickle.load(f)
-    # Compatibilite avec l'ancien format (tuple) si modele regenere manuellement
-    if isinstance(bundle, tuple):
-        model, encoder = bundle
-        bundle = {"model": model, "encoder": encoder, "metrics": {}, "feature_names": []}
     _cache["bundle"] = bundle
     return bundle
 
 
-def _fallback(crop, rainfall_mm, ndvi_avg):
-    """Estimation heuristique si le modele n'est pas disponible."""
-    base = {"Arachide": 1.20, "Mil": 0.90, "Mais": 2.00, "Riz": 3.50, "Sorgho": 1.10}
-    c = base.get(crop, 1.2)
-    adj = 0.0006 * (rainfall_mm - 600) + 0.8 * (ndvi_avg - 0.55)
-    return round(max(0.2, c + adj), 2)
-
-
-def predict_yield(region, crop, rainfall_mm, temp_avg_c, ndvi_avg,
-                  soil_type="Sableux", fertilizer_kg_ha=50,
-                  irrigation_type="Pluviale", variety=None,
-                  humidity_pct=62, wind_speed_ms=3.0, sunshine_hours=8.0,
-                  soil_ph=6.2, pest_pressure=0.10, area_ha=1.0,
-                  cycle_days=100, year=2024):
-    """Predit le rendement (t/ha) pour une region, une culture et des conditions donnees."""
+def _bundle_requis():
     bundle = load_model()
     if bundle is None:
-        return _fallback(crop, rainfall_mm, ndvi_avg)
+        raise FileNotFoundError(
+            f"Modele introuvable : {CHEMIN_MODELE}. Lancez : python -m models.train_model"
+        )
+    return bundle
 
-    model   = bundle["model"]
-    encoder = bundle["encoder"]
 
-    # Variete locale par defaut si non specifiee
-    default_variety = {
-        "Arachide": "55-437", "Mil": "Souna III", "Mais": "DK 8031",
-        "Riz": "Sahel 108", "Sorgho": "CE 145-66"
+def get_model_info():
+    """Version, commit et empreinte des donnees du modele charge."""
+    bundle = load_model()
+    if bundle is None:
+        return {}
+    return {
+        "version": bundle.get("version", "inconnue"),
+        "commit": bundle.get("commit", "inconnu"),
+        "empreinte_donnees": bundle.get("empreinte_donnees"),
     }
-    variety = variety or default_variety.get(crop, "Local")
-
-    # Coordonnees GPS et altitude de chaque region (utilisees comme features geographiques)
-    coords = {
-        "Thies": (14.79, -16.93, 70), "Fatick": (14.34, -16.41, 20),
-        "Kaolack": (14.15, -16.07, 15), "Saint-Louis": (16.02, -16.49, 5),
-        "Kaffrine": (14.10, -15.55, 40), "Tambacounda": (13.77, -13.67, 130),
-        "Sedhiou": (12.71, -15.56, 25),
-    }
-    lat, lon, elev = coords.get(region, (14.5, -15.0, 50))
-
-    row = {
-        "year": year, "latitude": lat, "longitude": lon, "elevation_m": elev,
-        "rainfall_mm": rainfall_mm, "temp_avg_c": temp_avg_c,
-        "temp_min_c": temp_avg_c - 5.5, "temp_max_c": temp_avg_c + 6.5,
-        "humidity_pct": humidity_pct, "wind_speed_ms": wind_speed_ms,
-        "sunshine_hours": sunshine_hours, "ndvi_avg": ndvi_avg,
-        "ndvi_min": ndvi_avg - 0.10, "ndvi_max": ndvi_avg + 0.08,
-        "fertilizer_kg_ha": fertilizer_kg_ha, "pest_pressure": pest_pressure,
-        "soil_ph": soil_ph, "area_ha": area_ha, "cycle_days": cycle_days,
-        "region": region, "crop": crop, "soil_type": soil_type,
-        "irrigation_type": irrigation_type, "variety": variety,
-    }
-
-    X = preprocess_single(row, encoder)
-    return round(float(model.predict(X)[0]), 2)
 
 
 def get_model_metrics():
+    """Metriques mesurees sur le jeu de test lors de l'entrainement."""
     bundle = load_model()
     return bundle.get("metrics", {}) if bundle else {}
 
 
-def predict_interval(region, crop, rainfall_mm, temp_avg_c, ndvi_avg,
-                     soil_type="Sableux", fertilizer_kg_ha=50,
-                     irrigation_type="Pluviale", **kwargs):
-    """Retourne la prediction et l'intervalle de confiance a 95% (pred +/- 1.96 * RMSE)."""
-    pred = predict_yield(region, crop, rainfall_mm, temp_avg_c, ndvi_avg,
-                         soil_type, fertilizer_kg_ha, irrigation_type, **kwargs)
-    metrics = get_model_metrics()
-    rmse = metrics.get("rmse", 0.18)
-    return pred, round(max(0, pred - 1.96 * rmse), 2), round(pred + 1.96 * rmse, 2)
+def predict_yield(region, crop, fertilizer_kg_ha=0, irrigation_type="Pluviale", **remplacements):
+    """Rendement predit en t/ha.
+
+    Les valeurs categorielles sont validees avant tout calcul : une region ou une
+    culture inconnue leve ValueError au lieu de produire un chiffre faux.
+    Les variables non renseignees prennent la valeur typique de la region.
+    """
+    region = valider("region", region)
+    crop = valider("crop", crop)
+    irrigation_type = valider("irrigation_type", irrigation_type)
+
+    bundle = _bundle_requis()
+    defauts = bundle["defauts"]
+    typiques = defauts["par_region"][region]
+    lat, lon, elev = COORDONNEES[region]
+
+    temp = typiques["temp_avg_c"]
+    ndvi = typiques["ndvi_avg"]
+
+    ligne = {
+        "year": 2022,
+        "latitude": lat, "longitude": lon, "elevation_m": elev,
+        "rainfall_mm": typiques["rainfall_mm"],
+        "temp_avg_c": temp, "temp_min_c": temp - 5.5, "temp_max_c": temp + 6.5,
+        "humidity_pct": typiques["humidity_pct"],
+        "wind_speed_ms": typiques["wind_speed_ms"],
+        "sunshine_hours": typiques["sunshine_hours"],
+        "ndvi_avg": ndvi, "ndvi_min": ndvi - 0.10, "ndvi_max": ndvi + 0.08,
+        "soil_ph": typiques["soil_ph"],
+        "soil_type": typiques["soil_type"],
+        "cycle_days": defauts["cycle_par_culture"][crop],
+        "pest_pressure": defauts["pest_pressure"],
+        "area_ha": 1.0,
+        "fertilizer_kg_ha": fertilizer_kg_ha,
+        "region": region, "crop": crop,
+        "irrigation_type": irrigation_type,
+        "variety": VARIETES_DEFAUT[crop],
+    }
+    ligne.update(remplacements)
+
+    if "soil_type" in remplacements:
+        ligne["soil_type"] = valider("soil_type", remplacements["soil_type"])
+
+    X = preprocess_single(ligne, bundle["encoder"])
+    return round(float(bundle["model"].predict(X)[0]), 2)
+
+
+def simulate(region, crop, surface_ha=1.0, fertilizer_kg_ha=0, irrigation_type="Pluviale"):
+    """Simulation complete, telle qu'elle est presentee a l'agriculteur.
+
+    Renvoie le rendement, sa fourchette, la recolte totale attendue sur la
+    surface declaree, et le rendement qu'il obtiendrait sans engrais.
+    """
+    rendement = predict_yield(region, crop, fertilizer_kg_ha, irrigation_type)
+    marge = 1.96 * get_model_metrics().get("rmse", 0.18)
+    recolte = rendement * surface_ha
+
+    return {
+        "rendement_t_ha": rendement,
+        "fourchette_t_ha": (round(max(0, rendement - marge), 2), round(rendement + marge, 2)),
+        "recolte_t": round(recolte, 2),
+        "recolte_sacs": int(round(recolte * SACS_PAR_TONNE)),
+        "rendement_sans_engrais": predict_yield(region, crop, 0, irrigation_type),
+        "surface_ha": surface_ha,
+    }
 
 
 def get_feature_importances(top_n=10):
+    """Variables les plus influentes du modele, par gain decroissant."""
     bundle = load_model()
     if not bundle:
         return []
-    model = bundle["model"]
-    names = bundle.get("feature_names", [])
-    if not names:
+    noms = bundle.get("feature_names", [])
+    if not noms:
         return []
-    pairs = sorted(zip(names, model.feature_importances_), key=lambda x: x[1], reverse=True)
-    return [(n, round(float(v), 4)) for n, v in pairs[:top_n]]
+    paires = sorted(zip(noms, bundle["model"].feature_importances_),
+                    key=lambda kv: kv[1], reverse=True)
+    return [(nom, round(float(v), 4)) for nom, v in paires[:top_n]]

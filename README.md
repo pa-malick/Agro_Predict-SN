@@ -1,175 +1,124 @@
-# AgroPredict SN - Prédiction des rendements agricoles au Sénégal
+# AgroPredict SN
 
-[![Python](https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white)](https://python.org)
-[![Streamlit](https://img.shields.io/badge/Streamlit-1.32-FF4B4B?logo=streamlit&logoColor=white)](https://streamlit.io)
-[![XGBoost](https://img.shields.io/badge/XGBoost-2.0-006400)](https://xgboost.readthedocs.io)
-[![CI](https://img.shields.io/badge/CI-GitHub_Actions-2088FF?logo=github-actions&logoColor=white)](/.github/workflows/ci.yml)
-[![Docker](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white)](Dockerfile)
-[![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
+Simulateur de rendement agricole pour les producteurs sénégalais.
 
-> **Projet Master 2 - Data Science & Génie Logiciel**  
-> Auteur : **Papa Malick NDIAYE** - njaymika@gmail.com  
-> Université : **Alioune Diop de Bambey**
+> Projet Master 2 Data Science & Génie Logiciel
+> Papa Malick NDIAYE, Université Alioune Diop de Bambey
 
 ---
 
-## Présentation
+## Ce que fait l'application
 
-L'agriculture représente **~15 % du PIB sénégalais** et fait vivre plus de 60 % de la population active. Face au changement climatique, les rendements de l'arachide, du mil, du maïs, du riz et du sorgho deviennent de plus en plus imprévisibles.
+L'agriculteur renseigne cinq informations qu'il connaît : sa région, sa culture,
+sa surface, son engrais et son mode d'irrigation. Il obtient en retour le
+rendement attendu en tonnes par hectare et la récolte totale correspondante,
+exprimée en sacs de 50 kg.
 
-**AgroPredict SN** combine Machine Learning (XGBoost) et données satellitaires officielles pour permettre aux agriculteurs, conseillers et décideurs d'**anticiper les rendements avant la saison des pluies**, région par région.
+L'interface tient sur un seul écran de téléphone.
+
+## Ce qu'elle ne fait pas
+
+- Elle ne prédit pas une année précise. Elle donne un rendement en conditions de
+  campagne normales.
+- Elle ne modélise pas la météo de l'année en cours.
+- Elle ne remplace pas un conseiller agricole.
+
+Ces limites sont volontaires et détaillées dans [CAHIER_DES_CHARGES.md](CAHIER_DES_CHARGES.md).
 
 ---
 
-## Performances du modèle
+## Origine des données
 
-| Métrique | Valeur |
+| Source | Ce qu'elle apporte |
 |---|---|
-| R² (coefficient de détermination) | **0.990** |
-| RMSE | **0.13 t/ha** |
-| MAE | **0.10 t/ha** |
-| Observations d'entraînement | **6 440** |
-| Variables (features) | **64** |
-| Algorithme | XGBoost Gradient Boosting |
+| FAOSTAT | Rendements nationaux réels du Sénégal, par culture, 2000 à 2022 |
+| NASA POWER | Météo réelle par région, agrégée sur la saison des pluies |
+| DAPSA | Facteurs de répartition régionale des rendements |
 
----
+**Les rendements par parcelle ne sont pas des mesures de terrain.** Ils sont
+obtenus en répartissant les rendements nationaux FAOSTAT entre les régions, puis
+en ajoutant une variabilité liée aux pratiques. Le modèle apprend donc cette
+règle de répartition : ses métriques mesurent sa capacité à la retrouver, pas à
+prédire un rendement réellement observé.
 
-## Sources de données officielles
-
-| Source | Données | Accès |
-|---|---|---|
-| [FAOSTAT](https://www.fao.org/faostat) | Rendements nationaux Sénégal 2000-2022 par culture | Bulk download officiel |
-| [NASA POWER API](https://power.larc.nasa.gov) | Météo réelle par région : pluie, temp, humidité, vent, ensoleillement | REST API gratuite |
-| [DAPSA / ANSD](https://agriculture.gouv.sn) | Facteurs de régionalisation par région agricole | Publications officielles |
-
----
-
-## Fonctionnalités
-
-- **Prédiction** des rendements pour 5 cultures x 7 régions avec intervalle de confiance 95 %
-- **26 variables** : climatiques (NASA POWER réelles), pédologiques, agronomiques, géographiques
-- **Carte interactive** avec rendements prévus colorés par intensité
-- **Recommandations agronomiques** : variété, calendrier de semis, irrigation, alertes ravageurs
-- **Explicabilité** : importance des variables + courbes de sensibilité par paramètre
-- **Historique** : tendances 2000-2023, heatmap région x culture, comparaison saison N vs N-1
-- **Export CSV** de l'historique des prédictions
-- **Globe 3D** animé avec localisation des régions agricoles
-
----
-
-## Architecture technique
-
-```
-AgroPredict_SN/
-├── streamlit_app.py              # Page d'accueil
-├── pages/
-│   ├── 1_Prediction_Rendements.py
-│   ├── 2_Carte_Interactive.py
-│   ├── 3_Recommandations.py
-│   ├── 4_About.py
-│   ├── 5_Analyse_SHAP.py
-│   └── 6_Historique.py
-├── models/
-│   ├── train_model.py            # Entrainement XGBoost
-│   └── predict.py                # Inference + intervalle de confiance
-├── data/
-│   ├── raw/
-│   │   ├── senegal_yield_data.csv     # Dataset final (6 440 lignes)
-│   │   └── faostat_raw.csv            # Donnees FAOSTAT brutes
-│   └── pipelines/
-│       ├── fetch_nasa_power.py        # Fetch API NASA POWER
-│       └── build_final_dataset.py     # Pipeline de construction
-├── utils/
-│   ├── theme.py                  # UI dark + globe 3D
-│   ├── preprocessing.py          # Encodage + features
-│   ├── data_loader.py
-│   └── visualization.py
-├── tests/
-│   ├── test_model.py             # Tests modele
-│   └── test_data.py              # Tests donnees
-├── .github/workflows/
-│   ├── ci.yml                    # Lint + tests + build Docker
-│   └── deploy.yml                # Deploy automatique
-├── Dockerfile
-└── docker-compose.yml
-```
+Ce choix est assumé : il n'existe pas de jeu de données public de rendements
+parcellaires au Sénégal.
 
 ---
 
 ## Installation
-
-### Locale
 
 ```bash
 git clone https://github.com/Pa-Malick/AgroPredict_SN.git
 cd AgroPredict_SN
 pip install -r requirements.txt
 
-# Generer le dataset et entrainer le modele
-python data/pipelines/build_final_dataset.py
-python -m models.train_model
-
-# Lancer l'application
+python data/pipelines/build_final_dataset.py   # construit le jeu de données
+python -m models.train_model                   # entraîne et enregistre le modèle
 streamlit run streamlit_app.py
 ```
 
-### Docker
+Avec Docker :
 
 ```bash
-docker-compose up --build
-# Application disponible sur http://localhost:8501
+GIT_COMMIT=$(git rev-parse --short HEAD) docker compose up --build
+```
+
+L'application est disponible sur http://localhost:8501
+
+---
+
+## Structure
+
+```
+streamlit_app.py           simulateur, écran unique
+pages/1_Le_modele.py       page technique : traçabilité, métriques, limites
+models/train_model.py      entraînement, découpage par groupe
+models/predict.py          simulation et validation des entrées
+utils/referentiel.py       source unique des valeurs autorisées
+utils/preprocessing.py     encodage des variables
+utils/data_loader.py       chargement et empreinte du jeu de données
+data/pipelines/            récupération NASA POWER et construction du jeu de données
+tests/                     critères d'acceptation CA-1 à CA-6
 ```
 
 ---
 
-## Pipeline de données
+## Qualité
+
+Chaque critère du cahier des charges correspond à un test automatisé. La CI
+échoue si l'un d'eux échoue.
+
+| Critère | Vérifie |
+|---|---|
+| CA-1 | Toute valeur de l'interface est connue du modèle, sinon erreur explicite |
+| CA-2 | Chaque entrée exposée a un effet mesurable et dans le bon sens |
+| CA-3 | Le modèle expose sa version, son commit et l'empreinte de ses données |
+| CA-4 | Aucune métrique n'est écrite en dur dans le code ou la documentation |
+| CA-5 | Les rendements restent dans les plages agronomiques connues |
+| CA-6 | La CI échoue si l'un des critères ci-dessus échoue |
 
 ```bash
-# 1. Recuperer les donnees NASA POWER reelles (API gratuite)
-python data/pipelines/fetch_nasa_power.py
-
-# 2. Construire le dataset final (FAOSTAT + NASA POWER)
-python data/pipelines/build_final_dataset.py
-
-# 3. Entrainer le modele
-python -m models.train_model
-
-# 4. Lancer les tests
 pytest tests/ -v
 ```
 
----
-
-## DevOps
-
-| Composant | Détail |
-|---|---|
-| CI - GitHub Actions | Lint (flake8) + pytest + build Docker a chaque push |
-| CD - GitHub Actions | Entrainement auto + deploiement Streamlit Cloud sur push `master` |
-| Containerisation | Dockerfile multi-stage + healthcheck |
-| Tests | 17 tests (donnees + modele) |
+Les métriques du modèle ne sont pas reproduites ici volontairement : elles sont
+lues dans l'artefact et affichées sur la page « Le modèle ».
 
 ---
 
-## Variables du dataset
+## Traçabilité et retour arrière
 
-| Catégorie | Variables |
-|---|---|
-| Temporelle | `year` |
-| Géographique | `region`, `latitude`, `longitude`, `elevation_m` |
-| Agronomique | `crop`, `variety`, `irrigation_type`, `fertilizer_kg_ha`, `cycle_days`, `area_ha` |
-| Pédologique | `soil_type`, `soil_ph` |
-| Climatique (NASA POWER) | `rainfall_mm`, `temp_avg_c`, `temp_min_c`, `temp_max_c`, `humidity_pct`, `wind_speed_ms`, `sunshine_hours` |
-| Végétation | `ndvi_avg`, `ndvi_min`, `ndvi_max` |
-| Stress biotique | `pest_pressure` |
-| Cible | `yield_ton_ha` |
-| Traçabilité | `yield_national_faostat`, `source` |
+Chaque modèle entraîné enregistre sa version, le commit dont il provient et
+l'empreinte SHA256 du jeu de données utilisé. Ces trois éléments suffisent à le
+reconstruire à l'identique.
+
+Pour revenir à une version précédente, relancer le workflow `Deploy` en
+indiquant le tag voulu. L'image correspondante contient déjà son modèle, aucun
+réentraînement n'est nécessaire.
 
 ---
 
-## Auteur
+## Licence
 
-**Papa Malick NDIAYE**  
-Master 2 Data Science & Génie Logiciel  
-Université Alioune Diop de Bambey  
-njaymika@gmail.com
+MIT, voir [LICENSE](LICENSE).

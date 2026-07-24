@@ -11,6 +11,11 @@
 *.css text eol=lf
 *.html text eol=lf
 
+# Jeux de donnees : aucune conversion de fin de ligne, sinon leur empreinte
+# SHA256 changerait entre Windows et Linux.
+*.csv -text
+*.sha256 -text
+
 # Fichiers binaires : pas de conversion
 *.pkl binary
 *.png binary

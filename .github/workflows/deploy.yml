@@ -2,49 +2,60 @@ name: Deploy
 
 on:
   push:
-    branches: [master, main]
     tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Version à déployer, par exemple v2.0.0. Laisser vide pour la version courante."
+        required: false
+
+# Un seul déploiement à la fois, sans annuler celui qui est en cours.
+concurrency:
+  group: deploy
+  cancel-in-progress: false
 
 jobs:
-  deploy:
+  publier:
+    name: Publier l'image
     runs-on: ubuntu-latest
-    needs: []
 
     steps:
       - uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
-          cache: "pip"
+          ref: ${{ github.event.inputs.tag || github.ref }}
 
-      - name: Install dependencies
-        run: pip install -r requirements.txt
+      - name: Déterminer la version
+        id: version
+        run: echo "nom=${{ github.event.inputs.tag || github.ref_name }}" >> "$GITHUB_OUTPUT"
 
-      - name: Generate dataset & train model
+      - name: Construire l'image
         run: |
-          python data/pipelines/generate_dataset.py
-          python -m models.train_model
+          docker build \
+            --build-arg GIT_COMMIT=${{ github.sha }} \
+            -t agropredict-sn:${{ steps.version.outputs.nom }} .
 
-      - name: Build & push Docker image
-        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+      - name: Publier sur Docker Hub
+        if: env.DOCKER_USER != ''
         env:
           DOCKER_USER: ${{ secrets.DOCKER_USERNAME }}
           DOCKER_PASS: ${{ secrets.DOCKER_PASSWORD }}
         run: |
           echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
-          docker build -t $DOCKER_USER/agropredic-sn:${{ github.ref_name }} .
-          docker push $DOCKER_USER/agropredic-sn:${{ github.ref_name }}
+          docker tag agropredict-sn:${{ steps.version.outputs.nom }} \
+                     "$DOCKER_USER"/agropredict-sn:${{ steps.version.outputs.nom }}
+          docker push "$DOCKER_USER"/agropredict-sn:${{ steps.version.outputs.nom }}
 
-      - name: Deploy to Streamlit Cloud (webhook)
-        if: github.ref == 'refs/heads/master'
+      - name: Déclencher le déploiement Streamlit Cloud
         env:
-          STREAMLIT_DEPLOY_HOOK: ${{ secrets.STREAMLIT_DEPLOY_HOOK }}
+          HOOK: ${{ secrets.STREAMLIT_DEPLOY_HOOK }}
         run: |
-          if [ -n "$STREAMLIT_DEPLOY_HOOK" ]; then
-            curl -X POST "$STREAMLIT_DEPLOY_HOOK"
-            echo "Streamlit Cloud deploy triggered."
+          if [ -n "$HOOK" ]; then
+            curl -fsS -X POST "$HOOK"
+            echo "Déploiement déclenché pour ${{ steps.version.outputs.nom }}."
           else
-            echo "STREAMLIT_DEPLOY_HOOK non configure - skipping."
+            echo "STREAMLIT_DEPLOY_HOOK non configuré, étape ignorée."
           fi
+
+# Revenir en arrière : relancer ce workflow via workflow_dispatch en indiquant
+# le tag précédent. L'image de cette version est déjà construite et contient
+# son propre modèle, aucun réentraînement n'est nécessaire.

@@ -31,8 +31,10 @@ def preprocess_data(df):
 
     available_cats = [c for c in CAT_COLS if c in df.columns]
 
-    # One-Hot Encoding : transforme les categories en colonnes binaires
-    encoder = OneHotEncoder(sparse_output=False, handle_unknown="ignore")
+    # One-Hot Encoding : transforme les categories en colonnes binaires.
+    # handle_unknown="error" : une valeur inconnue doit provoquer une erreur,
+    # jamais un vecteur nul qui donnerait une prediction silencieusement fausse.
+    encoder = OneHotEncoder(sparse_output=False, handle_unknown="error")
     encoded_cat = encoder.fit_transform(df[available_cats])
     encoded_df = pd.DataFrame(
         encoded_cat,

@@ -1,18 +1,21 @@
-version: "3.9"
-
 services:
   app:
-    build: .
+    build:
+      context: .
+      args:
+        # Rattache le modele construit dans l'image au commit courant.
+        GIT_COMMIT: ${GIT_COMMIT:-local}
     ports:
       - "8501:8501"
     environment:
       - PYTHONUNBUFFERED=1
-    volumes:
-      - ./data:/app/data
-      - ./models:/app/models
+    # Aucun volume monte sur /app/models : l'image contient deja son modele,
+    # le monter reviendrait a l'ecraser par le contenu de la machine hote.
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8501/_stcore/health"]
+      test: ["CMD", "python", "-c",
+             "import urllib.request; urllib.request.urlopen('http://localhost:8501/_stcore/health')"]
       interval: 30s
       timeout: 10s
+      start_period: 15s
       retries: 3

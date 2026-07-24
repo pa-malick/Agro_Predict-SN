@@ -1,78 +1,82 @@
-"""
-Récupère les données météo réelles via NASA POWER API (gratuit, sans clé).
-Paramètres : PRECTOTCORR (pluie mm/mois), T2M (température 2m °C)
+"""Recupere la meteo reelle par region via l'API NASA POWER (gratuite, sans cle).
+
+Produit data/raw/nasa_power_monthly.json, le fichier consomme par
+build_final_dataset.py. Ce script n'a besoin d'etre relance que pour etendre la
+periode couverte : le JSON est versionne dans le depot.
+
 Source : https://power.larc.nasa.gov/
 """
-import requests
-import pandas as pd
+
+import json
 import time
 
+import requests
+
+# Noms sans accent : ce sont ceux qu'apprend le modele (voir utils/referentiel.py).
 REGIONS = {
-    "Thiès":        {"lat": 14.79, "lon": -16.93},
-    "Fatick":       {"lat": 14.34, "lon": -16.41},
-    "Kaolack":      {"lat": 14.15, "lon": -16.07},
-    "Saint-Louis":  {"lat": 16.02, "lon": -16.49},
-    "Kaffrine":     {"lat": 14.10, "lon": -15.55},
-    "Tambacounda":  {"lat": 13.77, "lon": -13.67},
-    "Sédhiou":      {"lat": 12.71, "lon": -15.56},
+    "Thies":       (14.79, -16.93),
+    "Fatick":      (14.34, -16.41),
+    "Kaolack":     (14.15, -16.07),
+    "Saint-Louis": (16.02, -16.49),
+    "Kaffrine":    (14.10, -15.55),
+    "Tambacounda": (13.77, -13.67),
+    "Sedhiou":     (12.71, -15.56),
 }
 
-BASE_URL = "https://power.larc.nasa.gov/api/temporal/monthly/point"
+URL = "https://power.larc.nasa.gov/api/temporal/monthly/point"
+
+# Chaque parametre NASA POWER et son nom dans le fichier produit.
+PARAMETRES = {
+    "PRECTOTCORR":    "rainfall_mm",     # pluie, mm par jour
+    "T2M":            "temp_avg_c",      # temperature moyenne a 2 m
+    "T2M_MIN":        "temp_min_c",
+    "T2M_MAX":        "temp_max_c",
+    "RH2M":           "humidity_pct",    # humidite relative
+    "WS2M":           "wind_speed_ms",   # vitesse du vent
+    "ALLSKY_SFC_SW_DWN": "sunshine_mjm2",  # rayonnement solaire
+}
+
+SORTIE = "data/raw/nasa_power_monthly.json"
 
 
-def fetch_region(region, lat, lon, start=2005, end=2023):
-    params = {
-        "parameters": "PRECTOTCORR,T2M",
+def recuperer_region(region, lat, lon, debut=2000, fin=2022):
+    """Renvoie une ligne par mois pour une region."""
+    reponse = requests.get(URL, timeout=60, params={
+        "parameters": ",".join(PARAMETRES),
         "community": "AG",
-        "longitude": lon,
         "latitude": lat,
+        "longitude": lon,
+        "start": debut,
+        "end": fin,
         "format": "JSON",
-        "start": start,
-        "end": end,
-    }
-    resp = requests.get(BASE_URL, params=params, timeout=30)
-    resp.raise_for_status()
-    data = resp.json()["properties"]["parameter"]
+    })
+    reponse.raise_for_status()
+    mesures = reponse.json()["properties"]["parameter"]
 
-    records = []
-    for key in data["PRECTOTCORR"]:
-        year = int(key[:4])
-        month = int(key[4:])
-        if month == 13:
+    lignes = []
+    for cle in mesures["PRECTOTCORR"]:
+        mois = int(cle[4:])
+        if mois == 13:  # l'API ajoute un 13e "mois" qui est la moyenne annuelle
             continue
-        records.append({
-            "region": region,
-            "year": year,
-            "month": month,
-            "rainfall_mm": data["PRECTOTCORR"][key],
-            "temp_avg_c": data["T2M"][key],
-        })
-    return records
+        ligne = {"region": region, "lat": lat, "lon": lon,
+                 "year": int(cle[:4]), "month": mois}
+        for parametre, nom in PARAMETRES.items():
+            ligne[nom] = round(mesures[parametre][cle], 2)
+        lignes.append(ligne)
+    return lignes
 
 
-def fetch_all(output_path="data/raw/nasa_power_weather.csv"):
-    all_records = []
-    for region, coords in REGIONS.items():
-        print(f"  Fetching {region}...")
-        try:
-            records = fetch_region(region, coords["lat"], coords["lon"])
-            all_records.extend(records)
-            time.sleep(1)
-        except Exception as e:
-            print(f"  Erreur {region}: {e}")
+def main():
+    toutes = []
+    for region, (lat, lon) in REGIONS.items():
+        print(f"  {region}...")
+        toutes.extend(recuperer_region(region, lat, lon))
+        time.sleep(1)  # courtoisie envers l'API
 
-    df = pd.DataFrame(all_records)
-    # Agréger par année : pluie totale juin-oct (saison des pluies), temp moyenne annuelle
-    saison = df[df["month"].between(6, 10)].groupby(["region", "year"])["rainfall_mm"].sum().reset_index()
-    saison.columns = ["region", "year", "rainfall_saison_mm"]
-    temp_ann = df.groupby(["region", "year"])["temp_avg_c"].mean().reset_index()
-    temp_ann.columns = ["region", "year", "temp_avg_annuel_c"]
-
-    result = saison.merge(temp_ann, on=["region", "year"])
-    result.to_csv(output_path, index=False)
-    print(f"\nDonnées NASA POWER sauvegardées : {len(result)} lignes → {output_path}")
-    return result
+    with open(SORTIE, "w") as f:
+        json.dump(toutes, f)
+    print(f"{len(toutes)} lignes mensuelles ecrites dans {SORTIE}")
 
 
 if __name__ == "__main__":
-    fetch_all()
+    main()

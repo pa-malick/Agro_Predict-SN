@@ -12,9 +12,12 @@ Methode :
   et les rapports FAO Senegal (disparites inter-regionales connues).
 """
 
-import pandas as pd
+import calendar
+import hashlib
+import json
+
 import numpy as np
-import json, os
+import pandas as pd
 
 np.random.seed(42)
 
@@ -34,7 +37,6 @@ df_yield = df_yield[df_yield["Item"].isin(ITEM_MAP.keys())].copy()
 df_yield["crop"] = df_yield["Item"].map(ITEM_MAP)
 
 year_cols = [c for c in df_yield.columns if c.startswith("Y") and c[1:].isdigit()]
-years = [int(c[1:]) for c in year_cols]
 df_long = df_yield.melt(id_vars=["crop"], value_vars=year_cols, var_name="year_col", value_name="yield_hgha")
 df_long["year"] = df_long["year_col"].str[1:].astype(int)
 df_long = df_long.dropna(subset=["yield_hgha"])
@@ -81,25 +83,24 @@ df_nasa = pd.DataFrame(nasa_raw)
 
 # Agregation saison des pluies juin-octobre (saison agricole principale Sahel)
 # PRECTOTCORR est en mm/jour -> convertir en mm/mois en multipliant par les jours du mois
-import calendar
 df_nasa["days_in_month"] = df_nasa.apply(lambda r: calendar.monthrange(int(r["year"]), int(r["month"]))[1], axis=1)
 df_nasa["rainfall_mm_month"] = df_nasa["rainfall_mm"] * df_nasa["days_in_month"]
 
 df_saison = df_nasa[df_nasa["month"].between(6, 10)].groupby(["region", "year"]).agg(
-    rainfall_mm     =("rainfall_mm_month", "sum"),
-    temp_avg_c      =("temp_avg_c",    "mean"),
-    temp_min_c      =("temp_min_c",    "mean"),
-    temp_max_c      =("temp_max_c",    "mean"),
-    humidity_pct    =("humidity_pct",  "mean"),
-    wind_speed_ms   =("wind_speed_ms", "mean"),
-    sunshine_mjm2   =("sunshine_mjm2", "mean"),
+    rainfall_mm=("rainfall_mm_month", "sum"),
+    temp_avg_c=("temp_avg_c", "mean"),
+    temp_min_c=("temp_min_c", "mean"),
+    temp_max_c=("temp_max_c", "mean"),
+    humidity_pct=("humidity_pct", "mean"),
+    wind_speed_ms=("wind_speed_ms", "mean"),
+    sunshine_mjm2=("sunshine_mjm2", "mean"),
 ).reset_index()
 
 # Sunshine : MJ/m2/day -> heures approximatives (1 MJ/m2 ~ 0.28 kWh ~ 1h d'ensoleillement)
 df_saison["sunshine_hours"] = (df_saison["sunshine_mjm2"] * 0.25).round(1)
 df_saison = df_saison.drop(columns=["sunshine_mjm2"])
 
-print(df_saison.groupby("region")[["rainfall_mm","temp_avg_c"]].mean().round(1))
+print(df_saison.groupby("region")[["rainfall_mm", "temp_avg_c"]].mean().round(1))
 print(f"Enregistrements NASA POWER saisonniers : {len(df_saison)}")
 
 # Etape 4 : donnees agronomiques complementaires (sol, varietes, irrigation)
@@ -108,7 +109,7 @@ SOIL_DATA = {
     "Fatick":      {"soil_type": "Argileux",      "soil_ph": 6.0, "elevation_m": 20,  "lat": 14.34, "lon": -16.41},
     "Kaolack":     {"soil_type": "Sableux",       "soil_ph": 6.5, "elevation_m": 15,  "lat": 14.15, "lon": -16.07},
     "Saint-Louis": {"soil_type": "Argileux",      "soil_ph": 7.0, "elevation_m": 5,   "lat": 16.02, "lon": -16.49},
-    "Kaffrine":    {"soil_type": "Sablo-argileux","soil_ph": 6.2, "elevation_m": 40,  "lat": 14.10, "lon": -15.55},
+    "Kaffrine":    {"soil_type": "Sablo-argileux", "soil_ph": 6.2, "elevation_m": 40,  "lat": 14.10, "lon": -15.55},
     "Tambacounda": {"soil_type": "Laterite",      "soil_ph": 5.8, "elevation_m": 130, "lat": 13.77, "lon": -13.67},
     "Sedhiou":     {"soil_type": "Argileux",      "soil_ph": 5.5, "elevation_m": 25,  "lat": 12.71, "lon": -15.56},
 }
@@ -122,21 +123,18 @@ VARIETIES = {
 }
 
 IRRIG = {
-    "Arachide": ["Pluviale"]*85 + ["Aspersion"]*15,
-    "Mil":      ["Pluviale"]*92 + ["Aspersion"]*8,
-    "Mais":     ["Pluviale"]*70 + ["Aspersion"]*20 + ["Goutte-a-goutte"]*10,
-    "Riz":      ["Submersion"]*45 + ["Pluviale"]*35 + ["Goutte-a-goutte"]*20,
-    "Sorgho":   ["Pluviale"]*90 + ["Aspersion"]*10,
+    "Arachide": ["Pluviale"] * 85 + ["Aspersion"] * 15,
+    "Mil":      ["Pluviale"] * 92 + ["Aspersion"] * 8,
+    "Mais":     ["Pluviale"] * 70 + ["Aspersion"] * 20 + ["Goutte-a-goutte"] * 10,
+    "Riz":      ["Submersion"] * 45 + ["Pluviale"] * 35 + ["Goutte-a-goutte"] * 20,
+    "Sorgho":   ["Pluviale"] * 90 + ["Aspersion"] * 10,
 }
 
 FERT_MEAN = {"Arachide": 45, "Mil": 30, "Mais": 85, "Riz": 110, "Sorgho": 35}
-CYCLE     = {"Arachide": (90,120), "Mil": (75,105), "Mais": (90,130), "Riz": (110,150), "Sorgho": (100,140)}
+CYCLE = {"Arachide": (90, 120), "Mil": (75, 105), "Mais": (90, 130), "Riz": (110, 150), "Sorgho": (100, 140)}
 
 # Etape 5 : construction du dataset final (FAOSTAT x NASA POWER x donnees parcellaires)
 print("\n=== 3. CONSTRUCTION DATASET FINAL ===")
-
-EL_NINO = {2002, 2004, 2006, 2009, 2012, 2015, 2018, 2019}
-LA_NINA = {2000, 2007, 2010, 2011, 2016, 2020, 2021, 2022}
 
 # Nombre de parcelles simulees par combinaison annee/region/culture
 # Represente la diversite des pratiques agricoles au sein d'une region
@@ -156,7 +154,7 @@ for _, fao_row in df_long.iterrows():
 
         reg_factor = REGIONAL_FACTORS[crop][region]
 
-        for plot_idx in range(N_PLOTS):
+        for _ in range(N_PLOTS):
             # Variabilite inter-parcellaire realiste
             irrig = np.random.choice(IRRIG[crop])
             variety = np.random.choice(VARIETIES[crop])
@@ -224,12 +222,20 @@ df_final = pd.DataFrame(rows).sort_values(["year", "region", "crop"]).reset_inde
 out = "data/raw/senegal_yield_data.csv"
 df_final.to_csv(out, index=False, encoding="utf-8")
 
+# Empreinte du jeu de donnees : elle sera inscrite dans le modele entraine pour
+# qu'on puisse toujours dire sur quelles donnees exactes il a ete construit.
+with open(out, "rb") as f:
+    empreinte = hashlib.sha256(f.read()).hexdigest()
+with open("data/raw/senegal_yield_data.sha256", "w") as f:
+    f.write(empreinte + "\n")
+
 print(f"\nDataset final : {len(df_final)} lignes x {len(df_final.columns)} colonnes")
+print(f"Empreinte SHA256 : {empreinte[:16]}...")
 print(f"Fichier : {out}")
 print(f"Annees : {df_final['year'].min()} - {df_final['year'].max()}")
-print(f"Sources meteo : NASA POWER API (reelle)")
-print(f"Sources rendements : FAOSTAT Bulk Download (officiel)")
+print("Sources meteo : NASA POWER API (reelle)")
+print("Sources rendements : FAOSTAT Bulk Download (officiel)")
 print("\nRendements par culture (t/ha) :")
-print(df_final.groupby("crop")["yield_ton_ha"].agg(["mean","std","min","max"]).round(3).to_string())
+print(df_final.groupby("crop")["yield_ton_ha"].agg(["mean", "std", "min", "max"]).round(3).to_string())
 print("\nPluie saisonniere reelle par region (mm) :")
 print(df_final.groupby("region")["rainfall_mm"].mean().round(0).to_string())

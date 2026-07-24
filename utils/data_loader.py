@@ -1,12 +1,24 @@
-import pandas as pd
 import os
+
+import pandas as pd
+
+CHEMIN_DONNEES = "data/raw/senegal_yield_data.csv"
 
 
 def load_data():
-    """Charge le dataset principal depuis data/raw/ et retourne un DataFrame."""
-    path = "data/raw/senegal_yield_data.csv"
-    if not os.path.exists(path):
-        path = "data/raw/sample_yield_data.csv"
-    if not os.path.exists(path):
-        raise FileNotFoundError("Dataset introuvable. Lancez : python data/pipelines/generate_dataset.py")
-    return pd.read_csv(path, encoding="utf-8")
+    """Charge le jeu de donnees principal."""
+    if not os.path.exists(CHEMIN_DONNEES):
+        raise FileNotFoundError(
+            f"Jeu de donnees introuvable : {CHEMIN_DONNEES}. "
+            "Lancez : python data/pipelines/build_final_dataset.py"
+        )
+    return pd.read_csv(CHEMIN_DONNEES, encoding="utf-8")
+
+
+def empreinte_donnees():
+    """Empreinte SHA256 du jeu de donnees, ou None si elle n'a pas ete produite."""
+    chemin = CHEMIN_DONNEES.replace(".csv", ".sha256")
+    if not os.path.exists(chemin):
+        return None
+    with open(chemin) as f:
+        return f.read().strip()

@@ -5,21 +5,17 @@ __pycache__/
 .env
 .venv/
 venv/
+.pytest_cache/
 
-# Fichiers generés (recrées automatiquement par le pipeline)
+# Modele : produit par la CI, jamais versionne
 models/yield_model.pkl
-
-# Données brutes volumineuses (generées localement)
-data/raw/nasa_power_monthly.json
 
 # Documents de soutenance (ne pas publier)
 RAPPORT_AgroPredict_SN.docx
 
-# Éditeurs et OS
+# Editeurs et OS
 .DS_Store
 Thumbs.db
 .idea/
 .vscode/
 *.swp
-
-
