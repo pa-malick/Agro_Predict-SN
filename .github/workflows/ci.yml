@@ -23,7 +23,7 @@ jobs:
         run: pip install -r requirements.txt pytest flake8
 
       - name: Style
-        run: flake8 models/ utils/ pages/ tests/ data/ --max-line-length=120 --ignore=E501,W503,E221,E241
+        run: flake8 models/ utils/ pages/ tests/ data/ conftest.py --max-line-length=120 --ignore=E501,W503,E221,E241
 
       - name: Construire le jeu de données
         run: python data/pipelines/build_final_dataset.py
