@@ -6,10 +6,28 @@ le rendement attendu et la recolte totale sur sa parcelle.
 
 import streamlit as st
 
-from models.predict import get_model_info, get_model_metrics, simulate
+from models.predict import get_model_info, get_model_metrics, load_model, simulate
 from utils.referentiel import CULTURES, IRRIGATIONS, REGIONS, libelles, vers_canonique
 
 st.set_page_config(page_title="AgroPredict SN", page_icon="🌾", layout="centered")
+
+
+@st.cache_resource(show_spinner="Préparation du modèle au premier démarrage…")
+def _preparer_modele():
+    """Entraine le modele au premier lancement s'il n'est pas deja present.
+
+    Sur un hebergement comme Streamlit Cloud, l'artefact construit par la CI
+    n'est pas disponible. On le reconstruit alors une seule fois : les donnees
+    et leur empreinte sont versionnees et l'entrainement est deterministe, le
+    modele obtenu est donc identique a celui de la CI. En local et sous Docker,
+    le modele existe deja et cette fonction ne fait rien.
+    """
+    if load_model() is None:
+        from models.train_model import train_yield_model
+        train_yield_model()
+
+
+_preparer_modele()
 
 # Mise en page resserree, lisible sur un petit ecran. Pas de couleur ajoutee :
 # l'application suit le theme clair ou sombre choisi par l'utilisateur.
