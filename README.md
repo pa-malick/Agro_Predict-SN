@@ -1,9 +1,38 @@
-# AgroPredict SN
+<p align="center">
+  <img src="docs/logo.png" alt="AgroPredict SN" width="440">
+</p>
 
-Simulateur de rendement agricole pour les producteurs sénégalais.
+<p align="center">
+  Simulateur de rendement agricole pour les producteurs sénégalais.
+</p>
 
 > Projet Master 2 Data Science & Génie Logiciel
 > Papa Malick NDIAYE, Université Alioune Diop de Bambey
+
+---
+
+## En une phrase
+
+Un agriculteur répond à 5 questions sur son téléphone, et l'application lui dit
+combien il va récolter.
+
+## Comment ça marche, en 3 temps
+
+**1. Les données.** On part des rendements agricoles réels du Sénégal (FAOSTAT)
+et de la météo réelle (NASA POWER). Un script assemble tout ça en un tableau :
+région, culture, engrais, irrigation... et le rendement obtenu.
+
+**2. L'apprentissage.** Un modèle (XGBoost) lit ce tableau et apprend les
+régularités : le riz de Saint-Louis rend plus que le mil de Sédhiou, l'engrais
+aide un peu, etc. On enregistre ce qu'il a appris dans un fichier.
+
+**3. L'application.** L'agriculteur choisit sa région, sa culture, sa surface,
+son engrais, son irrigation. Le modèle calcule, et l'écran affiche deux chiffres :
+le rendement (t/ha) et la récolte totale (en sacs).
+
+> Ce n'est pas un modèle qui prédit l'avenir. C'est un simulateur honnête,
+> industrialisé proprement : données assumées, modèle traçable, tests qui
+> protègent réellement.
 
 ---
 

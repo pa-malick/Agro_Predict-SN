@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AgroPredict SN — Simulateur de rendement agricole</title>
+
+<!--
+  Page vitrine autonome. Aucun framework, aucune dependance externe : elle
+  s'ouvre directement dans un navigateur (double-clic sur le fichier).
+  Style sobre : fond clair, texte sombre, un seul accent vert.
+  Le logo est lu dans le meme dossier (docs/logo.png).
+-->
+
+<style>
+  :root {
+    --fond:        #FAFAF7;   /* blanc casse */
+    --fond-carte:  #FFFFFF;
+    --texte:       #1A1A1A;
+    --texte-doux:  #5F6B60;
+    --accent:      #2E7D32;   /* vert unique */
+    --accent-clair:#E8F5E9;
+    --bord:        #E6E8E3;
+    --rayon:       16px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--fond);
+    color: var(--texte);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .contenu { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+
+  /* ===== En-tete ===== */
+  header {
+    position: sticky; top: 0; z-index: 10;
+    background: rgba(250, 250, 247, 0.85);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--bord);
+  }
+  .barre {
+    display: flex; align-items: center; justify-content: space-between;
+    height: 68px;
+  }
+  .barre img { height: 34px; width: auto; display: block; }
+  .lien-entete {
+    font-size: 0.9rem; font-weight: 600; color: var(--accent);
+    text-decoration: none; padding: 8px 16px; border-radius: 10px;
+    border: 1px solid var(--accent-clair);
+    transition: all 0.3s ease;
+  }
+  .lien-entete:hover { background: var(--accent-clair); }
+
+  /* ===== Hero ===== */
+  .hero { position: relative; overflow: hidden; padding: 96px 0 72px; }
+
+  /* Halo vert anime, tres discret, purement decoratif. */
+  .halo {
+    position: absolute; top: -160px; right: -120px;
+    width: 460px; height: 460px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(46,125,50,0.14), transparent 70%);
+    animation: flotter 14s ease-in-out infinite;
+    pointer-events: none;
+  }
+  @keyframes flotter {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50%      { transform: translate(-30px, 30px) scale(1.08); }
+  }
+
+  .hero-logo {
+    height: 96px; width: auto; margin-bottom: 28px;
+    animation: apparition 0.8s ease-out both;
+  }
+  .hero h1 {
+    font-size: clamp(2.2rem, 6vw, 3.8rem);
+    font-weight: 800; letter-spacing: -0.02em; line-height: 1.1;
+    max-width: 720px;
+    animation: apparition 0.8s ease-out 0.1s both;
+  }
+  .hero h1 .accent { color: var(--accent); }
+  .hero p {
+    font-size: clamp(1rem, 2.2vw, 1.2rem);
+    color: var(--texte-doux); max-width: 560px; margin-top: 20px;
+    animation: apparition 0.8s ease-out 0.2s both;
+  }
+  .actions {
+    display: flex; flex-wrap: wrap; gap: 14px; margin-top: 36px;
+    animation: apparition 0.8s ease-out 0.3s both;
+  }
+  .bouton {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 1rem; font-weight: 600; text-decoration: none;
+    padding: 14px 26px; border-radius: 12px;
+    transition: all 0.3s ease;
+  }
+  .bouton-plein { background: var(--accent); color: #fff; }
+  .bouton-plein:hover { background: #256428; transform: translateY(-2px); }
+  .bouton-vide { color: var(--texte); border: 1px solid var(--bord); }
+  .bouton-vide:hover { border-color: var(--accent); color: var(--accent); }
+
+  @keyframes apparition {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ===== Grille de presentation (bento sobre) ===== */
+  .section { padding: 40px 0 88px; }
+  .titre-section {
+    font-size: 0.8rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.12em; color: var(--accent); margin-bottom: 24px;
+  }
+  .grille {
+    display: grid; gap: 18px;
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .carte {
+    background: var(--fond-carte); border: 1px solid var(--bord);
+    border-radius: var(--rayon); padding: 28px;
+    transition: all 0.4s ease;
+  }
+  .carte:hover { border-color: var(--accent); transform: translateY(-4px); }
+  .carte.large { grid-column: span 2; }
+  .carte h3 { font-size: 1.15rem; font-weight: 700; margin-bottom: 10px; }
+  .carte p { color: var(--texte-doux); font-size: 0.95rem; }
+  .carte .chiffre {
+    font-size: 2.4rem; font-weight: 800; color: var(--accent);
+    line-height: 1; margin-bottom: 6px;
+  }
+  .puces { list-style: none; margin-top: 8px; }
+  .puces li {
+    color: var(--texte-doux); font-size: 0.95rem;
+    padding-left: 20px; position: relative; margin-bottom: 4px;
+  }
+  .puces li::before {
+    content: ""; position: absolute; left: 0; top: 10px;
+    width: 7px; height: 7px; border-radius: 50%; background: var(--accent);
+  }
+
+  /* Encart honnetete sur les donnees. */
+  .encart {
+    margin-top: 18px; background: var(--accent-clair);
+    border-radius: var(--rayon); padding: 24px 28px;
+    font-size: 0.95rem; color: #2c3a2d;
+  }
+  .encart b { color: var(--accent); }
+
+  /* ===== Pied de page ===== */
+  footer {
+    border-top: 1px solid var(--bord); padding: 40px 0;
+    font-size: 0.9rem; color: var(--texte-doux);
+  }
+  footer .ligne {
+    display: flex; flex-wrap: wrap; gap: 8px 24px;
+    align-items: center; justify-content: space-between;
+  }
+  footer a { color: var(--accent); text-decoration: none; }
+
+  /* ===== Responsive ===== */
+  @media (max-width: 760px) {
+    .grille { grid-template-columns: 1fr; }
+    .carte.large { grid-column: span 1; }
+    .hero { padding: 64px 0 48px; }
+    /* Sur petit ecran on retire l'animation du halo pour rester leger. */
+    .halo { display: none; }
+  }
+
+  /* Respect de la preference "moins d'animations". */
+  @media (prefers-reduced-motion: reduce) {
+    .halo { animation: none; }
+    .hero-logo, .hero h1, .hero p, .actions { animation: none; }
+    html { scroll-behavior: auto; }
+  }
+</style>
+</head>
+
+<body>
+
+<!-- En-tete fixe -->
+<header>
+  <div class="contenu barre">
+    <img src="logo.png" alt="AgroPredict SN">
+    <a class="lien-entete" href="http://localhost:8501" target="_blank" rel="noopener">Lancer le simulateur</a>
+  </div>
+</header>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="halo"></div>
+  <div class="contenu">
+    <img class="hero-logo" src="logo.png" alt="AgroPredict SN">
+    <h1>Estimez votre récolte <span class="accent">avant de semer</span>.</h1>
+    <p>
+      Cinq questions simples, deux chiffres clairs. AgroPredict SN aide les
+      producteurs sénégalais à savoir ce qu'ils peuvent attendre de leur parcelle.
+    </p>
+    <div class="actions">
+      <a class="bouton bouton-plein" href="http://localhost:8501" target="_blank" rel="noopener">
+        Lancer le simulateur →
+      </a>
+      <a class="bouton bouton-vide" href="#comment">Comment ça marche</a>
+    </div>
+  </div>
+</section>
+
+<!-- Presentation en trois cartes -->
+<section class="section" id="comment">
+  <div class="contenu">
+    <div class="titre-section">Comment ça marche</div>
+    <div class="grille">
+
+      <div class="carte">
+        <h3>1 · Les données</h3>
+        <p>
+          Rendements réels du Sénégal (FAOSTAT) et météo réelle (NASA POWER),
+          assemblés par région, culture et pratique.
+        </p>
+      </div>
+
+      <div class="carte">
+        <h3>2 · L'apprentissage</h3>
+        <p>
+          Un modèle XGBoost apprend les régularités : le riz de Saint-Louis rend
+          plus que le mil de Sédhiou, l'engrais aide un peu.
+        </p>
+      </div>
+
+      <div class="carte">
+        <h3>3 · La réponse</h3>
+        <p>
+          L'agriculteur choisit sa situation. L'écran affiche le rendement
+          attendu et la récolte totale, en sacs.
+        </p>
+      </div>
+
+      <div class="carte large">
+        <div class="titre-section" style="margin-bottom:14px;">Ce qui rend l'outil fiable</div>
+        <ul class="puces">
+          <li>Chaque valeur saisie est vérifiée : jamais de réponse fausse en silence.</li>
+          <li>Le modèle porte sa version et l'empreinte de ses données. On sait d'où vient chaque chiffre.</li>
+          <li>46 tests automatisés protègent le comportement. La chaîne d'intégration échoue si l'un casse.</li>
+        </ul>
+      </div>
+
+      <div class="carte">
+        <div class="chiffre">5×7</div>
+        <p>cultures et régions couvertes, du bassin arachidier à la vallée du fleuve.</p>
+      </div>
+
+    </div>
+
+    <!-- Encart honnetete : le point qui distingue le projet -->
+    <div class="encart">
+      <b>Un simulateur honnête, pas une boule de cristal.</b>
+      Les rendements par parcelle sont estimés à partir des statistiques nationales,
+      pas mesurés sur le terrain. L'outil donne un ordre de grandeur fiable, il ne
+      prédit pas une année précise. C'est écrit clairement, et c'est assumé.
+    </div>
+  </div>
+</section>
+
+<!-- Pied de page -->
+<footer>
+  <div class="contenu ligne">
+    <div>
+      <b style="color:var(--texte);">Papa Malick NDIAYE</b> · Master 2 Data Science &amp; Génie Logiciel<br>
+      Université Alioune Diop de Bambey
+    </div>
+    <div>
+      <a href="http://localhost:8501" target="_blank" rel="noopener">Ouvrir le simulateur</a>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
