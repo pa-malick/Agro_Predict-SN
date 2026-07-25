@@ -6,8 +6,14 @@
   Simulateur de rendement agricole pour les producteurs sénégalais.
 </p>
 
+<p align="center">
+  <b>Simulateur : <a href="https://agropredict-sn.streamlit.app">agropredict-sn.streamlit.app</a></b>
+  &nbsp;·&nbsp;
+  <b>Présentation : <a href="https://pa-malick.github.io/Agro_Predict-SN/">pa-malick.github.io/Agro_Predict-SN</a></b>
+</p>
+
 > Projet Master 2 Data Science & Génie Logiciel
-> Papa Malick NDIAYE, Université Alioune Diop de Bambey
+> Auteur : Papa Malick NDIAYE — Université Alioune Diop de Bambey
 
 ---
 
@@ -75,7 +81,13 @@ parcellaires au Sénégal.
 
 ---
 
-## Installation
+## Accès
+
+- Simulateur en ligne, sans rien installer : https://agropredict-sn.streamlit.app
+- Page de présentation : https://pa-malick.github.io/Agro_Predict-SN/
+- En local, voir ci-dessous.
+
+## Installation locale
 
 ```bash
 git clone https://github.com/Pa-Malick/AgroPredict_SN.git
@@ -147,6 +159,12 @@ indiquant le tag voulu. L'image correspondante contient déjà son modèle, aucu
 réentraînement n'est nécessaire.
 
 ---
+
+## Auteur
+
+**Papa Malick NDIAYE**
+Master 2 Data Science & Génie Logiciel — Université Alioune Diop de Bambey
+njaymika@gmail.com
 
 ## Licence
 
